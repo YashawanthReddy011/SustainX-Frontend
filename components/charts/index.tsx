@@ -12,25 +12,7 @@ import {
 	Bar,
 } from "recharts";
 
-const activityData = [
-	{ month: "Jan", activities: 12 },
-	{ month: "Feb", activities: 18 },
-	{ month: "Mar", activities: 25 },
-	{ month: "Apr", activities: 21 },
-	{ month: "May", activities: 36 },
-	{ month: "Jun", activities: 43 },
-];
-
-const sdgData = [
-	{ name: "SDG 4", value: 32 },
-	{ name: "SDG 6", value: 24 },
-	{ name: "SDG 11", value: 28 },
-	{ name: "SDG 12", value: 20 },
-	{ name: "SDG 13", value: 39 },
-	{ name: "SDG 15", value: 30 },
-];
-
-export function ActivityChart() {
+export function ActivityChart({ data }: { data: Array<{ month: string; activities: number }> }) {
 	return (
 		<div className="sustain-card p-5">
 			<div className="mb-5">
@@ -41,9 +23,9 @@ export function ActivityChart() {
 				</p>
 			</div>
 
-			<div className="h-[280px]">
+			{data.length === 0 ? <div className="flex h-[280px] items-center justify-center text-sm text-[#89958e]">Verified activity history will appear here.</div> : <div className="h-[280px]">
 				<ResponsiveContainer width="100%" height="100%">
-					<AreaChart data={activityData}>
+					<AreaChart data={data}>
 						<defs>
 							<linearGradient
 								id="activityGradient"
@@ -87,12 +69,12 @@ export function ActivityChart() {
 						/>
 					</AreaChart>
 				</ResponsiveContainer>
-			</div>
+			</div>}
 		</div>
 	);
 }
 
-export function SDGImpactChart() {
+export function SDGImpactChart({ data }: { data: Array<{ name: string; value: number }> }) {
 	return (
 		<div className="sustain-card p-5">
 			<div className="mb-5">
@@ -103,9 +85,9 @@ export function SDGImpactChart() {
 				</p>
 			</div>
 
-			<div className="h-[280px]">
+			{data.length === 0 ? <div className="flex h-[280px] items-center justify-center text-sm text-[#89958e]">Verified SDG impact will appear here.</div> : <div className="h-[280px]">
 				<ResponsiveContainer width="100%" height="100%">
-					<BarChart data={sdgData}>
+					<BarChart data={data}>
 						<CartesianGrid
 							strokeDasharray="3 3"
 							stroke="#e4ebe6"
@@ -130,7 +112,7 @@ export function SDGImpactChart() {
 						<Bar dataKey="value" fill="#2e7c46" radius={[6, 6, 0, 0]} />
 					</BarChart>
 				</ResponsiveContainer>
-			</div>
+			</div>}
 		</div>
 	);
 }

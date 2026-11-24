@@ -28,10 +28,11 @@ export default function LoginPage() {
 				localStorage.setItem("sustainx_user", JSON.stringify(data.user));
 			}
 
-			window.location.href = "/dashboard";
+			const requested = new URLSearchParams(window.location.search).get("next");
+			window.location.href = requested?.startsWith("/") && !requested.startsWith("//") ? requested : "/dashboard";
 		} catch (err: any) {
 			setError(
-				err?.response?.data?.message ||
+				err?.response?.data?.error || err?.response?.data?.message ||
 					"Login failed. Check your email and try again."
 			);
 		} finally {
@@ -124,8 +125,7 @@ export default function LoginPage() {
 
 						<div className="mt-7 border-t border-[#e6ece8] pt-6 text-center">
 							<p className="text-xs leading-5 text-[#849087]">
-								Demo accounts can be created through the backend seed
-								configuration.
+								Run the backend seed command, then sign in with student@sustainx.local, community@sustainx.local, or admin@sustainx.local.
 							</p>
 						</div>
 					</div>

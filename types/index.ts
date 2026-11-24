@@ -18,6 +18,7 @@ export interface User {
 	email: string;
 	role: Role;
 	points?: number;
+	impactPoints?: number;
 	avatarUrl?: string;
 }
 
@@ -29,6 +30,8 @@ export interface SDG {
 	description?: string;
 	color?: string;
 	icon?: string;
+	actions?: string[];
+	targets?: string[];
 }
 
 export interface Challenge {
@@ -38,8 +41,10 @@ export interface Challenge {
 	sdgId: number;
 	points: number;
 	deadline?: string;
+	durationDays?: number;
 	participants?: number;
 	status?: string;
+	joined?: boolean;
 }
 
 export interface Activity {
@@ -55,6 +60,12 @@ export interface Activity {
 	createdAt?: string;
 	reviewedAt?: string;
 	rejectionReason?: string;
+	reviewNote?: string;
+	location?: string;
+	category?: string;
+	quantity?: number;
+	latitude?: number;
+	longitude?: number;
 }
 
 export interface Project {
@@ -67,6 +78,9 @@ export interface Project {
 	status?: string;
 	members?: number;
 	progress?: number;
+	ownerName?: string;
+	location?: string;
+	joined?: boolean;
 }
 
 export interface CommunityReport {
@@ -79,6 +93,8 @@ export interface CommunityReport {
 	longitude?: number;
 	status: ReportStatus;
 	createdAt?: string;
+	createdBy?: string;
+	reviewNote?: string;
 }
 
 export interface Certificate {
@@ -88,6 +104,8 @@ export interface Certificate {
 	issuedAt: string;
 	status: "ACTIVE" | "REVOKED";
 	verificationUrl?: string;
+	activityId?: string;
+	userId?: string;
 }
 
 export interface ImpactStats {
@@ -106,4 +124,21 @@ export interface LeaderboardUser {
 	points: number;
 	activities: number;
 	rank: number;
+}
+
+export interface DashboardData {
+	user: User | null;
+	stats: {
+		totalActivities: number;
+		verifiedActivities: number;
+		totalPoints: number;
+		projects: number;
+		challenges: number;
+		certificates: number;
+		sdgsImpacted: number;
+	};
+	activities: Activity[];
+	notifications: Array<{ id: string; title: string; message: string; createdAt: string; read: boolean }>;
+	activityGrowth: Array<{ month: string; activities: number }>;
+	sdgImpact: Array<{ name: string; value: number }>;
 }

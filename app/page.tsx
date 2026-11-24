@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -10,6 +13,7 @@ import {
   Target,
   Sparkles,
 } from "lucide-react";
+import { getPublicSummary } from "../services/platform.service";
 
 const modules = [
   {
@@ -52,14 +56,15 @@ const workflow = [
   "Certificate",
 ];
 
-const stats = [
-  { value: "17", label: "SDGs covered" },
-  { value: "7", label: "Core SDGs mapped" },
-  { value: "100+", label: "Potential activities" },
-  { value: "∞", label: "Impact possibilities" },
-];
-
 export default function HomePage() {
+  const [summary, setSummary] = useState<Awaited<ReturnType<typeof getPublicSummary>> | null>(null);
+  useEffect(() => { getPublicSummary().then(setSummary).catch(() => setSummary(null)); }, []);
+  const stats = [
+    { value: summary?.sdgs ?? "—", label: "SDGs covered" },
+    { value: summary?.challenges ?? "—", label: "Active challenges" },
+    { value: summary?.verifiedActivities ?? "—", label: "Verified actions" },
+    { value: summary?.projects ?? "—", label: "Impact projects" },
+  ];
   return (
     <div>
       <section className="relative overflow-hidden bg-[#f4f9f5]">
@@ -131,9 +136,9 @@ export default function HomePage() {
 
                     <div className="grid grid-cols-2 gap-3">
                       {[
-                        ["17", "SDGs"],
-                        ["03", "Modules"],
-                        ["∞", "Actions"],
+                        [String(summary?.sdgs ?? "—"), "SDGs"],
+                        [String(modules.length).padStart(2, "0"), "Modules"],
+                        [String(summary?.verifiedActivities ?? "—"), "Verified actions"],
                         ["01", "Mission"],
                       ].map(([value, label]) => (
                         <div

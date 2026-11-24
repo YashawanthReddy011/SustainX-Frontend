@@ -1,113 +1,22 @@
-import {
-	Award,
-	ShieldCheck,
-	QrCode,
-	Download,
-	ExternalLink,
-} from "lucide-react";
+"use client";
 
-const certificates = [
-	{
-		id: "SX-2026-000124",
-		title: "Climate Action Contributor",
-		date: "18 Sep 2026",
-		status: "ACTIVE",
-	},
-	{
-		id: "SX-2026-000098",
-		title: "Community Impact Volunteer",
-		date: "02 Aug 2026",
-		status: "ACTIVE",
-	},
-];
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { Award, ShieldCheck, QrCode, Download, ExternalLink } from "lucide-react";
+import type { Certificate } from "../../types";
+import { getApiError, getMyCertificates } from "../../services/platform.service";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function CertificatesPage() {
-	return (
-		<section className="section bg-[#f7faf7]">
-			<div className="page-container">
-				<div className="mb-10">
-					<div className="section-label">
-						<Award size={14} />
-						VERIFIED ACHIEVEMENT
-					</div>
-
-					<h1 className="mt-4 text-4xl font-black text-[#153426] md:text-5xl">
-						My Certificates
-					</h1>
-
-					<p className="mt-3 max-w-2xl text-sm leading-7 text-[#68776f]">
-						Certificates issued for verified participation and measurable
-						SustainX impact.
-					</p>
-				</div>
-
-				<div className="grid gap-6 lg:grid-cols-2">
-					{certificates.map((certificate) => (
-						<div key={certificate.id} className="sustain-card overflow-hidden">
-							<div className="bg-[#0b4129] p-7 text-white">
-								<div className="flex items-start justify-between">
-									<div>
-										<div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#b9d5c1]">
-											<ShieldCheck size={15} />
-											Verified Certificate
-										</div>
-
-										<h2 className="mt-5 text-2xl font-black">
-											{certificate.title}
-										</h2>
-									</div>
-
-									<div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10">
-										<Award size={24} />
-									</div>
-								</div>
-							</div>
-
-							<div className="p-6">
-								<div className="grid gap-4 sm:grid-cols-2">
-									<div>
-										<p className="text-xs font-bold uppercase tracking-wider text-[#89958d]">
-											Certificate ID
-										</p>
-										<p className="mt-1 text-sm font-black text-[#173526]">
-											{certificate.id}
-										</p>
-									</div>
-
-									<div>
-										<p className="text-xs font-bold uppercase tracking-wider text-[#89958d]">
-											Issued
-										</p>
-										<p className="mt-1 text-sm font-black text-[#173526]">
-											{certificate.date}
-										</p>
-									</div>
-								</div>
-
-								<div className="mt-5 flex items-center justify-between rounded-xl bg-[#eff8f1] p-4">
-									<div className="flex items-center gap-2 text-sm font-bold text-[#24623a]">
-										<ShieldCheck size={17} />
-										{certificate.status}
-									</div>
-									<QrCode size={30} className="text-[#0f5132]" />
-								</div>
-
-								<div className="mt-5 flex gap-3">
-									<button className="btn-primary flex-1">
-										<Download size={16} />
-										Download
-									</button>
-
-									<button className="btn-secondary">
-										<ExternalLink size={16} />
-										Verify
-									</button>
-								</div>
-							</div>
-						</div>
-					))}
-				</div>
-			</div>
-		</section>
-	);
+	const { isAuthenticated, loading: authLoading } = useAuth(); const [certificates, setCertificates] = useState<Certificate[]>([]); const [loading, setLoading] = useState(true); const [error, setError] = useState("");
+	useEffect(() => { if (authLoading) return; if (!isAuthenticated) { setLoading(false); return; } getMyCertificates().then(setCertificates).catch((e) => setError(getApiError(e, "Unable to load certificates."))).finally(() => setLoading(false)); }, [authLoading, isAuthenticated]);
+	function download(certificate: Certificate) {
+		const escape = (value: string) => value.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]!);
+		const content = `<!doctype html><html><head><meta charset="utf-8"><title>${escape(certificate.title)}</title><style>body{font:16px Georgia,serif;color:#173526;display:grid;place-items:center;min-height:95vh;margin:0}.card{max-width:760px;padding:70px;text-align:center;border:12px double #0f5132}h1{font-size:38px}small{display:block;margin-top:35px;color:#63736a}</style></head><body><main class="card"><p>SUSTAINX VERIFIED CERTIFICATE</p><h1>${escape(certificate.title)}</h1><p>Presented in recognition of a verified contribution to sustainable development.</p><p><strong>Certificate ${escape(certificate.certificateNumber)}</strong></p><small>Issued ${escape(new Date(certificate.issuedAt).toLocaleDateString())} · Verify at SustainX</small></main></body></html>`;
+		const url = URL.createObjectURL(new Blob([content], { type: "text/html" })); const anchor = document.createElement("a"); anchor.href = url; anchor.download = `${certificate.certificateNumber}.html`; anchor.click(); URL.revokeObjectURL(url);
+	}
+	return <section className="section bg-[#f7faf7]"><div className="page-container"><div className="mb-10"><div className="section-label"><Award size={14} />VERIFIED ACHIEVEMENT</div><h1 className="mt-4 text-4xl font-black text-[#153426] md:text-5xl">My Certificates</h1><p className="mt-3 max-w-2xl text-sm leading-7 text-[#68776f]">Certificates issued for verified participation and measurable SustainX impact.</p></div>
+		{error && <p role="alert" className="mb-5 rounded-xl bg-[#fff0f1] p-3 text-sm text-[#a52b36]">{error}</p>}
+		{!isAuthenticated && !authLoading ? <div className="sustain-card p-8 text-center"><p className="text-sm text-[#68776f]">Sign in to see your certificates.</p><Link href="/login?next=%2Fcertificates" className="btn-primary mt-5">Sign in</Link></div> : loading ? <p className="text-sm text-[#68776f]">Loading certificates…</p> : certificates.length === 0 ? <div className="sustain-card p-8 text-center text-sm text-[#68776f]">No certificates have been issued yet. Certificates are created when an activity is verified.</div> : <div className="grid gap-6 lg:grid-cols-2">{certificates.map((certificate) => <div key={certificate.id} className="sustain-card overflow-hidden"><div className="bg-[#0b4129] p-7 text-white"><div className="flex items-start justify-between"><div><div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#b9d5c1]"><ShieldCheck size={15} />Verified Certificate</div><h2 className="mt-5 text-2xl font-black">{certificate.title}</h2></div><div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10"><Award size={24} /></div></div></div><div className="p-6"><div className="grid gap-4 sm:grid-cols-2"><div><p className="text-xs font-bold uppercase tracking-wider text-[#89958d]">Certificate ID</p><p className="mt-1 text-sm font-black text-[#173526]">{certificate.certificateNumber}</p></div><div><p className="text-xs font-bold uppercase tracking-wider text-[#89958d]">Issued</p><p className="mt-1 text-sm font-black text-[#173526]">{new Date(certificate.issuedAt).toLocaleDateString()}</p></div></div><div className="mt-5 flex items-center justify-between rounded-xl bg-[#eff8f1] p-4"><div className="flex items-center gap-2 text-sm font-bold text-[#24623a]"><ShieldCheck size={17} />{certificate.status}</div><QrCode size={30} className="text-[#0f5132]" /></div><div className="mt-5 flex gap-3"><button onClick={() => download(certificate)} className="btn-primary flex-1"><Download size={16} />Download</button><Link href={`/certificates/verify/${encodeURIComponent(certificate.certificateNumber)}`} className="btn-secondary"><ExternalLink size={16} />Verify</Link></div></div></div>)}</div>}
+	</div></section>;
 }

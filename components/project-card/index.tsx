@@ -1,17 +1,24 @@
-import Link from "next/link";
 import {
-	ArrowRight,
 	Users,
 	Target,
 	CheckCircle2,
 } from "lucide-react";
+import Link from "next/link";
 
 import type { Project } from "../../types";
 
 export default function ProjectCard({
 	project,
+	joined,
+	joining,
+	isAuthenticated,
+	onJoin,
 }: {
 	project: Project;
+	joined: boolean;
+	joining: boolean;
+	isAuthenticated: boolean;
+	onJoin: () => void;
 }) {
 	return (
 		<div className="sustain-card sustain-card-hover overflow-hidden">
@@ -59,13 +66,7 @@ export default function ProjectCard({
 						)}
 					</div>
 
-					<Link
-						href="/projects"
-						className="flex items-center gap-1 text-sm font-bold text-[#0f5132]"
-					>
-						View
-						<ArrowRight size={15} />
-					</Link>
+					{isAuthenticated ? <button type="button" disabled={joined || joining} onClick={onJoin} className="rounded-lg px-3 py-2 text-sm font-bold text-[#0f5132] hover:bg-[#edf7f0] disabled:cursor-default">{joining ? "Joining…" : joined ? "Joined" : "Join project"}</button> : <Link href="/login?next=%2Fprojects" className="rounded-lg px-3 py-2 text-sm font-bold text-[#0f5132] hover:bg-[#edf7f0]">Sign in to join</Link>}
 				</div>
 
 				{project.progress !== undefined && (
