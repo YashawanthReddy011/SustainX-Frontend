@@ -3,6 +3,8 @@ import './globals.css';
 
 import Navbar from '../components/navbar';
 import Footer from '../components/footer';
+import RouteBreadcrumbs from '../components/navigation/RouteBreadcrumbs';
+import { AuthProvider } from '../hooks/useAuth';
 
 export const metadata: Metadata = {
   title: 'SustainX — Students, Society & Earth',
@@ -18,11 +20,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <Navbar />
+		<AuthProvider>
+			<Navbar />
+			<RouteBreadcrumbs />
 
-        <main>{children}</main>
+        	<main>{children}</main>
 
-        <Footer />
+        	<Footer />
+		</AuthProvider>
       </body>
     </html>
   );

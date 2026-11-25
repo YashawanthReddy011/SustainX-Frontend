@@ -13,6 +13,7 @@ import {
 } from "recharts";
 
 export function ActivityChart({ data }: { data: Array<{ month: string; activities: number }> }) {
+	const hasVerifiedActions = data.some((item) => item.activities > 0);
 	return (
 		<div className="sustain-card p-5">
 			<div className="mb-5">
@@ -23,7 +24,7 @@ export function ActivityChart({ data }: { data: Array<{ month: string; activitie
 				</p>
 			</div>
 
-			{data.length === 0 ? <div className="flex h-[280px] items-center justify-center text-sm text-[#89958e]">Verified activity history will appear here.</div> : <div className="h-[280px]">
+			{!hasVerifiedActions ? <div className="flex h-[280px] items-center justify-center px-6 text-center text-sm leading-6 text-[#89958e]">No verified actions were recorded during this period.</div> : <div className="h-[280px]">
 				<ResponsiveContainer width="100%" height="100%">
 					<AreaChart data={data}>
 						<defs>
@@ -75,6 +76,7 @@ export function ActivityChart({ data }: { data: Array<{ month: string; activitie
 }
 
 export function SDGImpactChart({ data }: { data: Array<{ name: string; value: number }> }) {
+	const hasVerifiedImpact = data.some((item) => item.value > 0);
 	return (
 		<div className="sustain-card p-5">
 			<div className="mb-5">
@@ -85,7 +87,7 @@ export function SDGImpactChart({ data }: { data: Array<{ name: string; value: nu
 				</p>
 			</div>
 
-			{data.length === 0 ? <div className="flex h-[280px] items-center justify-center text-sm text-[#89958e]">Verified SDG impact will appear here.</div> : <div className="h-[280px]">
+			{!hasVerifiedImpact ? <div className="flex h-[280px] items-center justify-center px-6 text-center text-sm leading-6 text-[#89958e]">No verified SDG contributions have been recorded yet.</div> : <div className="h-[280px]">
 				<ResponsiveContainer width="100%" height="100%">
 					<BarChart data={data}>
 						<CartesianGrid

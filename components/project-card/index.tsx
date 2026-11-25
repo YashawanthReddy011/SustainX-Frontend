@@ -35,15 +35,17 @@ export default function ProjectCard({
 					</div>
 				)}
 
-				<div className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-xs font-bold text-[#0f5132] backdrop-blur">
+				<Link href={`/sdgs/${project.sdgId}`} className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-xs font-bold text-[#0f5132] backdrop-blur hover:underline">
 					SDG {project.sdgId}
-				</div>
+				</Link>
 			</div>
 
 			<div className="p-5">
-				<h3 className="text-lg font-extrabold text-[#173526]">
-					{project.title}
-				</h3>
+				<Link href={`/projects/${project.id}`} className="group/title">
+					<h3 className="text-lg font-extrabold text-[#173526] group-hover/title:text-[#0f5132]">
+						{project.title}
+					</h3>
+				</Link>
 
 				<p className="mt-2 line-clamp-3 text-sm leading-6 text-[#69776f]">
 					{project.description}

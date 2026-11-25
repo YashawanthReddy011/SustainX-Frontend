@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -12,8 +12,9 @@ import {
   Globe2,
   Target,
   Sparkles,
+  BarChart3,
 } from "lucide-react";
-import { getPublicSummary } from "../services/platform.service";
+import { getApiError, getPublicSummary } from "../services/platform.service";
 
 const modules = [
   {
@@ -39,7 +40,7 @@ const modules = [
     subtitle: "Environment & Life",
     description:
       "Support biodiversity, tree plantation, waste reduction and environmental conservation activities.",
-    href: "/earth",
+    href: "/ecoguard",
     icon: Leaf,
     number: "03",
   },
@@ -58,12 +59,32 @@ const workflow = [
 
 export default function HomePage() {
   const [summary, setSummary] = useState<Awaited<ReturnType<typeof getPublicSummary>> | null>(null);
-  useEffect(() => { getPublicSummary().then(setSummary).catch(() => setSummary(null)); }, []);
+  const [summaryLoading, setSummaryLoading] = useState(true);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
+  const refreshSummary = useCallback(async () => {
+    setSummaryLoading(true);
+    setSummaryError(null);
+    try { setSummary(await getPublicSummary()); }
+    catch (error) {
+      setSummary(null);
+      setSummaryError(getApiError(error, "Live impact data is unavailable. Check your connection and try again."));
+    }
+    finally { setSummaryLoading(false); }
+  }, []);
+  useEffect(() => { void refreshSummary(); }, [refreshSummary]);
+  const displayStat = (value: number | undefined) => {
+    if (summaryError) return "Unavailable";
+    if (summaryLoading) return "Loading…";
+    return typeof value === "number" ? value.toLocaleString() : "Unavailable";
+  };
   const stats = [
-    { value: summary?.sdgs ?? "—", label: "SDGs covered" },
-    { value: summary?.challenges ?? "—", label: "Active challenges" },
-    { value: summary?.verifiedActivities ?? "—", label: "Verified actions" },
-    { value: summary?.projects ?? "—", label: "Impact projects" },
+    { value: displayStat(summary?.sdgsCovered), label: "SDGs with verified impact" },
+    { value: displayStat(summary?.activeChallenges), label: "Active challenges" },
+    { value: displayStat(summary?.verifiedActions), label: "Verified actions" },
+    { value: displayStat(summary?.impactProjects), label: "Impact projects" },
+    { value: displayStat(summary?.resolvedIssues), label: "Resolved issues" },
+    { value: displayStat(summary?.participants), label: "Project participants" },
+    { value: displayStat(summary?.impactPoints), label: "Impact points awarded" },
   ];
   return (
     <div>
@@ -136,10 +157,10 @@ export default function HomePage() {
 
                     <div className="grid grid-cols-2 gap-3">
                       {[
-                        [String(summary?.sdgs ?? "—"), "SDGs"],
-                        [String(modules.length).padStart(2, "0"), "Modules"],
-                        [String(summary?.verifiedActivities ?? "—"), "Verified actions"],
-                        ["01", "Mission"],
+                        [displayStat(summary?.verifiedActions), "Verified actions"],
+                        [displayStat(summary?.activeChallenges), "Active challenges"],
+                        [displayStat(summary?.impactProjects), "Impact projects"],
+                        [displayStat(summary?.participants), "Project participants"],
                       ].map(([value, label]) => (
                         <div
                           key={label}
@@ -174,8 +195,11 @@ export default function HomePage() {
         </div>
       </section>
 
+      {summaryLoading && <span role="status" className="sr-only">Loading live SustainX impact data.</span>}
+      {summaryError && <div role="alert" className="page-container mt-6 flex flex-col gap-3 rounded-xl bg-[#fff0f1] p-4 text-sm text-[#a52b36] sm:flex-row sm:items-center sm:justify-between"><span>{summaryError}</span><button onClick={() => void refreshSummary()} className="font-bold underline">Try again</button></div>}
+
       <section className="border-y border-[#dce7df] bg-white">
-        <div className="page-container grid grid-cols-2 divide-x divide-[#e3ebe5] md:grid-cols-4">
+        <div className="page-container grid grid-cols-2 divide-x divide-y divide-[#e3ebe5] sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
           {stats.map((stat) => (
             <div key={stat.label} className="px-5 py-8 text-center">
               <div className="stat-number">{stat.value}</div>
@@ -186,6 +210,8 @@ export default function HomePage() {
           ))}
         </div>
       </section>
+
+      {!summaryLoading && !summaryError && summary?.verifiedActions === 0 && <div className="page-container mt-5 rounded-xl bg-[#eef8f1] p-4 text-center text-sm text-[#42644c]">No activities have been approved yet. Verified action and points totals update after an administrator approves a submission.</div>}
 
       <section className="section bg-[#f7faf7]">
         <div className="page-container">
@@ -242,6 +268,79 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {summary && (
+        <section className="section bg-white">
+          <div className="page-container">
+            <div className="mb-8 flex flex-col justify-between gap-3 md:flex-row md:items-end">
+              <div>
+                <div className="section-label"><BarChart3 size={14} />LIVE IMPACT OVERVIEW</div>
+                <h2 className="mt-4 text-3xl font-black text-[#163526]">SustainX in action</h2>
+              </div>
+              <Link href="/impact-map" className="inline-flex items-center gap-2 text-sm font-bold text-[#0f5132]">Explore the impact map <ArrowRight size={15} /></Link>
+            </div>
+            <div className="grid gap-5 lg:grid-cols-3">
+              <div className="sustain-card p-6">
+                <h3 className="font-extrabold text-[#173526]">Top-performing SDGs</h3>
+                <div className="mt-5 space-y-3">
+                  {summary.topSdgs.length ? summary.topSdgs.map((item) => (
+                    <Link key={item.number} href={`/sdgs/${item.number}`} className="flex items-center justify-between rounded-xl bg-[#f2f8f4] px-4 py-3 text-sm">
+                      <span className="font-bold text-[#405349]">SDG {item.number}</span>
+                      <span className="font-black text-[#0f5132]">{item.count} actions</span>
+                    </Link>
+                  )) : <p className="text-sm text-[#7d8a82]">Verified SDG activity will appear here.</p>}
+                </div>
+              </div>
+              <div className="sustain-card p-6">
+                <h3 className="font-extrabold text-[#173526]">Community leaderboard</h3>
+                <div className="mt-5 space-y-3">
+                  {summary.leaderboard.length ? summary.leaderboard.map((member) => (
+                    <div key={member.id} className="flex items-center justify-between border-b border-[#edf2ee] pb-3 last:border-0">
+                      <div className="flex items-center gap-3"><span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#e5f4e9] text-xs font-black text-[#0f5132]">{member.rank}</span><span className="text-sm font-bold text-[#405349]">{member.name}</span></div>
+                      <span className="text-sm font-black text-[#0f5132]">{member.points} pts</span>
+                    </div>
+                  )) : <p className="text-sm text-[#7d8a82]">Community points will appear here.</p>}
+                </div>
+              </div>
+              <div className="sustain-card p-6">
+                <h3 className="font-extrabold text-[#173526]">Recent impact projects</h3>
+                <div className="mt-5 space-y-3">
+                  {summary.recentProjects.length ? summary.recentProjects.map((project) => (
+                    <Link key={project.id} href={`/projects/${encodeURIComponent(project.id)}`} className="block rounded-xl border border-[#e2ebe5] p-4 hover:bg-[#f7faf7]">
+                      <p className="text-sm font-extrabold text-[#173526]">{project.title}</p>
+                      <p className="mt-1 text-xs text-[#7d8a82]">SDG {project.sdgId} • {project.progress ?? 0}% complete</p>
+                    </Link>
+                  )) : <p className="text-sm text-[#7d8a82]">Published projects will appear here.</p>}
+                </div>
+              </div>
+            </div>
+            <div className="mt-5 grid gap-5 lg:grid-cols-[1.2fr_.8fr]">
+              <div className="sustain-card p-6">
+                <h3 className="font-extrabold text-[#173526]">Monthly impact summary</h3>
+                <div className="mt-5 grid grid-cols-3 gap-3 sm:grid-cols-6">
+                  {summary.monthlyImpact.map((item) => (
+                    <div key={item.month} className="rounded-xl bg-[#f2f8f4] px-3 py-4 text-center">
+                      <div className="text-xl font-black text-[#0f5132]">{item.activities}</div>
+                      <div className="mt-1 text-xs font-bold text-[#7d8a82]">{item.month}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="sustain-card p-6">
+                <h3 className="font-extrabold text-[#173526]">Recent community activities</h3>
+                <div className="mt-4 space-y-3">
+                  {summary.recentActivities.length ? summary.recentActivities.slice(0, 3).map((activity) => (
+                    <Link key={activity.id} href="/impact-map" className="block border-b border-[#edf2ee] pb-3 last:border-0">
+                      <p className="text-sm font-bold text-[#405349]">{activity.title}</p>
+                      <p className="mt-1 text-xs text-[#87948d]">{activity.location || "Community"} • SDG {activity.sdgId}</p>
+                    </Link>
+                  )) : <p className="text-sm text-[#7d8a82]">Verified community actions will appear here.</p>}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="section bg-[#0b4129] text-white">
         <div className="page-container">

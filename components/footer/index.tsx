@@ -46,6 +46,9 @@ export default function Footer() {
 							<Link href="/impact-map" className="hover:text-white">
 								Impact Map
 							</Link>
+							<Link href="/community" className="hover:text-white">
+								Community Chat
+							</Link>
 						</div>
 					</div>
 
@@ -61,7 +64,7 @@ export default function Footer() {
 							<Link href="/community" className="hover:text-white">
 								CivicConnect
 							</Link>
-							<Link href="/earth" className="hover:text-white">
+							<Link href="/ecoguard" className="hover:text-white">
 								EcoGuard
 							</Link>
 							<Link href="/certificates" className="hover:text-white">
