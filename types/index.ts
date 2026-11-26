@@ -7,10 +7,11 @@ export type ActivityStatus =
 	| "NEEDS_INFO";
 
 export type ReportStatus =
-	| "REPORTED"
+	| "SUBMITTED"
 	| "UNDER_REVIEW"
-	| "IN_PROGRESS"
-	| "RESOLVED";
+	| "INVESTIGATING"
+	| "RESOLVED"
+	| "REJECTED";
 
 export interface User {
 	id: string;
@@ -31,8 +32,8 @@ export interface SDG {
 	color?: string;
 	icon?: string;
 	actions?: string[];
-	targets?: string[];
-	category?: "People" | "Prosperity" | "Planet" | "Partnership";
+	targetCount?: number;
+	category?: "People" | "Prosperity" | "Planet" | "Peace" | "Partnership";
 	isActive?: boolean;
 	progress?: number;
 	completedActions?: number;
@@ -42,17 +43,51 @@ export interface SDG {
 	relatedActivities?: Activity[];
 }
 
+export interface SDGStats {
+	totalGoals: number;
+	totalPillars: number;
+	totalTargets: number;
+}
+
 export interface Challenge {
 	id: string;
 	title: string;
 	description: string;
 	sdgId: number;
+	sdgNumbers?: number[];
 	points: number;
 	deadline?: string;
+	startDate?: string;
+	endDate?: string;
 	durationDays?: number;
 	participants?: number;
 	status?: string;
+	computedStatus?: "ACTIVE" | "UPCOMING" | "COMPLETED" | "DRAFT" | "ARCHIVED";
+	difficulty?: "Easy" | "Medium" | "Hard";
+	instructions?: string[];
+	requirements?: string[];
+	requiredSubmissions?: number;
 	joined?: boolean;
+	myProgress?: {
+		submitted: number;
+		pending: number;
+		verified: number;
+		completionPercent: number;
+		requiredSubmissions: number;
+	};
+}
+
+export interface ChallengeListResponse {
+	items: Challenge[];
+	pagination: { page: number; limit: number; total: number; totalPages: number };
+}
+
+export interface ChallengeStats {
+	activeChallenges: number;
+	upcomingChallenges: number;
+	completedChallenges: number;
+	participants: number;
+	verifiedActions: number;
 }
 
 export interface Activity {
@@ -79,8 +114,12 @@ export interface Activity {
 
 export type EnvironmentalActivityType =
 	| "TREE_PLANTATION"
+	| "TREE_SURVIVAL"
 	| "WATER_CONSERVATION"
+	| "RENEWABLE_ENERGY"
 	| "WASTE_REDUCTION"
+	| "CLIMATE_ACTION"
+	| "MARINE_PROTECTION"
 	| "BIODIVERSITY";
 
 export interface EnvironmentalSubmission {
@@ -89,6 +128,7 @@ export interface EnvironmentalSubmission {
 	title: string;
 	description: string;
 	location: string;
+	activityDate?: string;
 	quantity: number;
 	unit: string;
 	measurementMethod?: string;
@@ -103,18 +143,39 @@ export interface EnvironmentalSubmission {
 }
 
 export interface EnvironmentalSummary {
+	totalActivities: number;
+	verifiedActivities: number;
+	pendingActivities: number;
+	rejectedActivities: number;
+	treePlantation: number;
+	treeSurvival: number;
+	waterSaved: number;
+	renewableEnergy: number;
+	wasteReduced: number;
+	climateActions: number;
+	marineActions: number;
+	biodiversityObservations: number;
+	environmentalSDGs: number[];
 	totals: {
 		trees: number;
+		treeSurvival: number;
 		litres: number;
+		kwh: number;
 		wasteKg: number;
+		climateActions: number;
+		marineActions: number;
 		speciesObservations: number;
 		verifiedSubmissions: number;
 	};
 	monthlyAnalytics: Array<{
 		month: string;
 		trees: number;
+		treeSurvival: number;
 		litres: number;
+		kwh: number;
 		wasteKg: number;
+		climateActions: number;
+		marineActions: number;
 		speciesObservations: number;
 		verifiedSubmissions: number;
 	}>;
@@ -123,22 +184,63 @@ export interface EnvironmentalSummary {
 
 export interface Project {
 	id: string;
+	message?: string;
 	title: string;
 	description: string;
 	sdgId: number;
 	ownerId?: string;
+	ownerName?: string;
 	imageUrl?: string;
-	status?: string;
+	category?: "Environment" | "Education" | "Community" | "Health" | "Technology" | "Agriculture" | "Other";
+	objectives?: string[];
+	visibility?: "PUBLIC" | "PRIVATE";
+	status?: "DRAFT" | "PENDING" | "PUBLISHED" | "REJECTED" | "ACTIVE" | "COMPLETED" | "ARCHIVED";
+	computedStatus?: "DRAFT" | "PENDING" | "PUBLISHED" | "REJECTED" | "ACTIVE" | "UPCOMING" | "COMPLETED" | "ARCHIVED";
+	participantCount?: number;
 	members?: number;
 	progress?: number;
-	ownerName?: string;
 	location?: string;
+	startDate?: string;
+	endDate?: string;
 	joined?: boolean;
 	sdgNumbers?: number[];
-	milestones?: Array<{ id: string; title: string; status: "PENDING" | "IN_PROGRESS" | "COMPLETED"; dueDate?: string }>;
+	membershipStatus?: "NONE" | "PENDING" | "INVITED" | "APPROVED" | "REJECTED" | "REMOVED";
+	milestones?: Array<{ id: string; title: string; description?: string; status: "PENDING" | "IN_PROGRESS" | "COMPLETED"; dueDate?: string; assignedTo?: string; completedAt?: string }>;
 	discussions?: Array<{ id: string; authorName: string; message: string; createdAt: string }>;
-	team?: Array<{ id: string; name: string; email: string; role: Role }>;
+	team?: Array<{ id: string; membershipId?: string; name: string; email?: string; role: "OWNER" | "LEADER" | "MEMBER"; status?: string }>;
+	membershipRequests?: Array<{ id: string; membershipId: string; name: string; email: string; createdAt?: string }>;
+	evidence?: ProjectEvidence[];
 	activities?: Activity[];
+}
+
+export interface ProjectEvidence {
+	id: string;
+	projectId: string;
+	milestoneId?: string | null;
+	submittedBy: string;
+	description: string;
+	files: Array<{ url: string; publicId?: string; resourceType?: string }>;
+	sdgNumbers: number[];
+	status: "PENDING" | "APPROVED" | "REJECTED";
+	reviewComment?: string;
+	createdAt?: string;
+	projectTitle?: string;
+	submitterName?: string;
+	submitterEmail?: string;
+}
+
+export interface ProjectListResponse {
+	items: Project[];
+	pagination: { page: number; limit: number; total: number; totalPages: number };
+}
+
+export interface ProjectStats {
+	publishedProjects: number;
+	activeProjects: number;
+	upcomingProjects: number;
+	completedProjects: number;
+	uniqueParticipants: number;
+	verifiedSdgs: number;
 }
 
 export interface CommunityReport {
@@ -149,6 +251,7 @@ export interface CommunityReport {
 	location?: string;
 	latitude?: number;
 	longitude?: number;
+	sdgNumbers?: number[];
 	status: ReportStatus;
 	createdAt?: string;
 	createdBy?: string;
@@ -160,6 +263,21 @@ export interface CommunityReport {
 	upvoted?: boolean;
 	comments?: Array<{ id: string; userId: string; authorName: string; message: string; createdAt: string }>;
 	statusHistory?: Array<{ status: ReportStatus; changedByName?: string; note: string; createdAt: string }>;
+}
+
+export interface CommunityReportListResponse {
+	items: CommunityReport[];
+	pagination: { page: number; limit: number; total: number; totalPages: number };
+}
+
+export interface CommunityReportStats {
+	total: number;
+	submitted: number;
+	underReview: number;
+	investigating: number;
+	resolved: number;
+	rejected: number;
+	resolutionRate: number;
 }
 
 export interface ChatMessage {

@@ -23,7 +23,7 @@ const sdgColors: Record<number, string> = {
 };
 
 export default function SDGCard({ sdg }: { sdg: SDG }) {
-	const color = sdgColors[sdg.id] || "#0f5132";
+	const color = sdg.color || sdgColors[sdg.id] || "#0f5132";
 
 	return (
 		<Link
@@ -33,18 +33,14 @@ export default function SDGCard({ sdg }: { sdg: SDG }) {
 			<div className="h-2" style={{ backgroundColor: color }} />
 
 			<div className="p-5">
-				<div className="mb-5 flex items-start justify-between">
+				<div className="mb-5 flex items-start justify-between gap-3">
 					<div
 						className="flex h-12 w-12 items-center justify-center rounded-xl text-lg font-black text-white"
 						style={{ backgroundColor: color }}
 					>
 						{sdg.id}
 					</div>
-
-					<Target
-						size={18}
-						className="text-[#9aaa9f] transition group-hover:text-[#0f5132]"
-					/>
+					{sdg.category && <span className="rounded-full bg-[#f0f6f1] px-3 py-1.5 text-xs font-bold text-[#4d6656]">{sdg.category}</span>}
 				</div>
 
 				<p className="mb-1 text-xs font-bold uppercase tracking-wider text-[#789087]">
@@ -59,12 +55,14 @@ export default function SDGCard({ sdg }: { sdg: SDG }) {
 					{sdg.shortDescription}
 				</p>
 
-				<div className="mt-5 flex items-center gap-2 text-sm font-bold text-[#0f5132]">
-					Explore SDG
-					<ArrowRight
-						size={16}
-						className="transition group-hover:translate-x-1"
-					/>
+				<div className="mt-5 flex items-center justify-between gap-3 border-t border-[#e7eee9] pt-4">
+					<span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#718278]">
+						<Target size={14} className="text-[#6d9b77]" />
+						{typeof sdg.targetCount === "number" ? `${sdg.targetCount} official targets` : "Target count unavailable"}
+					</span>
+					<span className="inline-flex items-center gap-1 text-sm font-bold text-[#0f5132]">
+						Explore<ArrowRight size={16} className="transition group-hover:translate-x-1" />
+					</span>
 				</div>
 			</div>
 		</Link>

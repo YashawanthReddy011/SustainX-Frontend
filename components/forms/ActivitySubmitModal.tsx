@@ -9,7 +9,7 @@ import ModalShell from "./ModalShell";
 
 const sdgs = ["No Poverty", "Zero Hunger", "Good Health and Well-being", "Quality Education", "Gender Equality", "Clean Water and Sanitation", "Affordable and Clean Energy", "Decent Work and Economic Growth", "Industry, Innovation and Infrastructure", "Reduced Inequalities", "Sustainable Cities and Communities", "Responsible Consumption and Production", "Climate Action", "Life Below Water", "Life on Land", "Peace, Justice and Strong Institutions", "Partnerships for the Goals"];
 
-export default function ActivitySubmitModal({ onClose, onCreated, defaultSdgId = 13, defaultCategory }: { onClose: () => void; onCreated: (activity: Activity) => void; defaultSdgId?: number; defaultCategory?: string }) {
+export default function ActivitySubmitModal({ onClose, onCreated, defaultSdgId = 13, defaultCategory, defaultChallengeId }: { onClose: () => void; onCreated: (activity: Activity) => void; defaultSdgId?: number; defaultCategory?: string; defaultChallengeId?: string }) {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState("");
 	const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
@@ -18,18 +18,20 @@ export default function ActivitySubmitModal({ onClose, onCreated, defaultSdgId =
 		event.preventDefault(); setLoading(true); setError("");
 		try {
 			if (Boolean(form.latitude) !== Boolean(form.longitude)) { setError("Enter both latitude and longitude, or leave both blank."); return; }
+			if (defaultChallengeId && !evidenceFile && !form.evidenceUrl.trim()) { setError("Add a photo or evidence URL for this challenge submission."); return; }
 			let evidenceUrl = form.evidenceUrl.trim();
 			if (evidenceFile) {
 				const body = new FormData(); body.append("file", evidenceFile);
 				const uploaded = await api.post("/media", body, { headers: { "Content-Type": "multipart/form-data" } });
 				evidenceUrl = uploaded.data.media.url;
 			}
-			const activity = await createActivity({ title: form.title.trim(), description: form.description.trim(), location: form.location.trim(), evidenceUrl, quantity: Number(form.quantity), sdgId: Number(form.sdgId), category: form.category.trim() || undefined, ...(form.latitude && form.longitude ? { latitude: Number(form.latitude), longitude: Number(form.longitude) } : {}) });
+			const activity = await createActivity({ title: form.title.trim(), description: form.description.trim(), location: form.location.trim(), evidenceUrl, quantity: Number(form.quantity), sdgId: Number(form.sdgId), challengeId: defaultChallengeId, category: form.category.trim() || undefined, ...(form.latitude && form.longitude ? { latitude: Number(form.latitude), longitude: Number(form.longitude) } : {}) });
 			onCreated(activity); onClose();
 		} catch (submitError) { setError(getApiError(submitError, "Unable to submit the activity. Sign in and check that the backend is running.")); }
 		finally { setLoading(false); }
 	}
-	return <ModalShell title="Submit an activity" onClose={onClose}><form onSubmit={submit} className="space-y-4">
+	return <ModalShell title={defaultChallengeId ? "Submit challenge evidence" : "Submit an activity"} onClose={onClose}><form onSubmit={submit} className="space-y-4">
+		{defaultChallengeId && <p className="rounded-xl bg-[#f1f8f3] p-3 text-xs leading-5 text-[#52655a]">Your submission will be linked to this challenge and reviewed by an administrator. Verified evidence updates challenge progress and awards impact points.</p>}
 		<Field label="Activity name"><input required minLength={3} maxLength={120} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className={inputClass} placeholder="e.g. Native tree planting" /></Field>
 		<Field label="What did you do?"><textarea required minLength={10} maxLength={2000} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} className={`${inputClass} h-auto py-3`} placeholder="Describe the action and its impact" /></Field>
 		<div className="grid gap-4 sm:grid-cols-2"><Field label="Location"><input required minLength={2} value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} className={inputClass} placeholder="City, campus or area" /></Field><Field label="SDG"><select value={form.sdgId} onChange={(e) => setForm({ ...form, sdgId: e.target.value })} className={inputClass}>{sdgs.map((name, index) => <option key={name} value={index + 1}>SDG {index + 1}: {name}</option>)}</select></Field></div>

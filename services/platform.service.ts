@@ -1,8 +1,14 @@
 import api from "../lib/api";
-import type { Activity, AdminDashboardData, Certificate, Challenge, ChatConversation, ChatMessage, ChatUser, CommunityReport, DashboardData, EnvironmentalSubmission, EnvironmentalSummary, Project, Role } from "../types";
+import type { Activity, AdminDashboardData, Certificate, Challenge, ChallengeListResponse, ChallengeStats, ChatConversation, ChatMessage, ChatUser, CommunityReport, CommunityReportListResponse, CommunityReportStats, DashboardData, EnvironmentalSubmission, EnvironmentalSummary, Project, ProjectEvidence, ProjectListResponse, ProjectStats, Role } from "../types";
 
-export async function getChallenges(filters?: { status?: string; sdgId?: number; search?: string; page?: number; limit?: number }) {
-	const { data } = await api.get<Challenge[]>("/challenges", { params: filters });
+export async function getChallenges(filters?: { status?: string; sdg?: number; sdgId?: number; search?: string; difficulty?: string; sort?: string; page?: number; limit?: number; mine?: boolean; signal?: AbortSignal }) {
+	const { data } = await api.get<ChallengeListResponse | Challenge[]>("/challenges", { params: { ...filters, signal: undefined, ...(filters?.mine ? { mine: "1" } : {}) }, signal: filters?.signal });
+	if (Array.isArray(data)) return { items: data, pagination: { page: 1, limit: data.length, total: data.length, totalPages: 1 } };
+	return data;
+}
+
+export async function getChallengeStats() {
+	const { data } = await api.get<ChallengeStats>("/challenges/stats");
 	return data;
 }
 
@@ -16,18 +22,31 @@ export async function joinChallenge(id: string) {
 	return data;
 }
 
-export async function getProjects(filters?: { status?: string; sdgId?: number; search?: string; page?: number; limit?: number }) {
-	const { data } = await api.get<Project[]>("/projects", { params: filters });
+export async function withdrawFromChallenge(id: string) {
+	const { data } = await api.post<{ id: string; joined: boolean; withdrawn: boolean }>(`/challenges/${encodeURIComponent(id)}/withdraw`);
 	return data;
 }
 
-export async function createProject(input: Pick<Project, "title" | "description" | "sdgId"> & { location?: string; imageUrl?: string }) {
+export async function getProjects(filters?: { status?: string; sdg?: number; sdgId?: number; search?: string; category?: string; sort?: string; page?: number; limit?: number; mine?: boolean; signal?: AbortSignal }) {
+	const { data } = await api.get<ProjectListResponse | Project[]>("/projects", { params: { ...filters, signal: undefined, ...(filters?.mine ? { mine: "1" } : {}) }, signal: filters?.signal });
+	if (Array.isArray(data)) return { items: data, pagination: { page: 1, limit: data.length, total: data.length, totalPages: data.length ? 1 : 0 } };
+	return data;
+}
+
+export async function getProjectStats() {
+	const { data } = await api.get<ProjectStats>("/projects/stats");
+	return data;
+}
+
+export type CreateProjectInput = Pick<Project, "title" | "description" | "sdgNumbers" | "category" | "objectives" | "location" | "imageUrl" | "startDate" | "endDate" | "visibility">;
+
+export async function createProject(input: CreateProjectInput) {
 	const { data } = await api.post<Project>("/projects", input);
 	return data;
 }
 
 export async function joinProject(id: string) {
-	const { data } = await api.post<{ id: string; joined: boolean; members: number }>(`/projects/${encodeURIComponent(id)}/join`);
+	const { data } = await api.post<{ id: string; status: "PENDING" | "APPROVED"; message: string }>(`/projects/${encodeURIComponent(id)}/join`);
 	return data;
 }
 
@@ -41,8 +60,13 @@ export async function getProjectMembers(id: string) {
 	return data;
 }
 
-export async function updateProject(id: string, input: Partial<Pick<Project, "title" | "description" | "location" | "imageUrl" | "status" | "progress" | "sdgNumbers">>) {
+export async function updateProject(id: string, input: Partial<Pick<Project, "title" | "description" | "objectives" | "category" | "location" | "imageUrl" | "startDate" | "endDate" | "visibility" | "sdgNumbers">>) {
 	const { data } = await api.patch<Project>(`/projects/${encodeURIComponent(id)}`, input);
+	return data;
+}
+
+export async function updateProjectMembership(id: string, memberId: string, status: "APPROVED" | "REJECTED" | "REMOVED", role?: "MEMBER" | "LEADER") {
+	const { data } = await api.patch(`/projects/${encodeURIComponent(id)}/members/${encodeURIComponent(memberId)}`, { status, ...(role ? { role } : {}) });
 	return data;
 }
 
@@ -60,8 +84,8 @@ export async function removeProjectMember(id: string, memberId: string) {
 	return data;
 }
 
-export async function addProjectMilestone(id: string, title: string, status: "PENDING" | "IN_PROGRESS" | "COMPLETED" = "PENDING", dueDate?: string) {
-	const { data } = await api.post(`/projects/${encodeURIComponent(id)}/milestones`, { title, status, ...(dueDate ? { dueDate } : {}) });
+export async function addProjectMilestone(id: string, input: { title: string; description?: string; dueDate?: string; assignedTo?: string }) {
+	const { data } = await api.post(`/projects/${encodeURIComponent(id)}/milestones`, input);
 	return data;
 }
 
@@ -75,8 +99,23 @@ export async function addProjectDiscussion(id: string, message: string) {
 	return data;
 }
 
-export async function getReports(filters?: { status?: string; category?: string; location?: string }) {
-	const { data } = await api.get<CommunityReport[]>("/community/reports", { params: filters });
+export async function submitProjectEvidence(id: string, input: { description: string; milestoneId?: string; evidenceUrls: string[] }) {
+	const { data } = await api.post<ProjectEvidence>(`/projects/${encodeURIComponent(id)}/evidence`, input);
+	return data;
+}
+
+export async function getReports(filters?: { status?: string; category?: string; search?: string; from?: string; to?: string; page?: number; limit?: number }) {
+	const { data } = await api.get<CommunityReportListResponse>("/community/reports", { params: filters });
+	return data;
+}
+
+export async function getMyReports(filters?: { status?: string; page?: number; limit?: number }) {
+	const { data } = await api.get<CommunityReportListResponse>("/community/reports/mine", { params: filters });
+	return data;
+}
+
+export async function getCommunityReportStats() {
+	const { data } = await api.get<CommunityReportStats>("/community/reports/stats");
 	return data;
 }
 
@@ -85,12 +124,12 @@ export async function getCommunityReport(id: string) {
 	return data;
 }
 
-export async function createReport(input: Pick<CommunityReport, "title" | "description" | "category" | "location"> & Partial<Pick<CommunityReport, "latitude" | "longitude" | "imageUrls">>) {
+export async function createReport(input: Pick<CommunityReport, "title" | "description" | "category" | "location"> & Partial<Pick<CommunityReport, "latitude" | "longitude" | "imageUrls" | "sdgNumbers">>) {
 	const { data } = await api.post<CommunityReport>("/community/reports", input);
 	return data;
 }
 
-export async function updateReportStatus(id: string, status: "UNDER_REVIEW" | "IN_PROGRESS" | "RESOLVED", reviewNote?: string, resolutionDetails?: string, resolutionEvidenceUrl?: string) {
+export async function updateReportStatus(id: string, status: "UNDER_REVIEW" | "INVESTIGATING" | "RESOLVED" | "REJECTED", reviewNote?: string, resolutionDetails?: string, resolutionEvidenceUrl?: string) {
 	const { data } = await api.patch<CommunityReport>(`/community/reports/${encodeURIComponent(id)}/status`, { status, reviewNote, resolutionDetails, resolutionEvidenceUrl });
 	return data;
 }
@@ -280,7 +319,7 @@ export async function getUnreadChatCount() {
 }
 
 export async function getEnvironmentalSummary() {
-	const { data } = await api.get<EnvironmentalSummary>("/ecoguard/activities/summary");
+	const { data } = await api.get<EnvironmentalSummary>("/ecoguard/stats");
 	return data;
 }
 
@@ -310,6 +349,7 @@ export async function submitEnvironmentalActivity(input: {
 	title: string;
 	description: string;
 	location: string;
+	activityDate: string;
 	quantity: number;
 	measurementMethod?: string;
 	speciesName?: string;
